@@ -1,23 +1,23 @@
 import { useState } from 'react';
 import { jsPDF } from 'jspdf';
-import { Upload, FileText } from 'lucide-react';
+import { Upload, FileText, Camera, Image } from 'lucide-react';
 import "../css/image-to-pdf-converter.css";
 
 const ImageToPdfConverter = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showSourceSelect, setShowSourceSelect] = useState(false);
 
   const handleImageSelect = (event) => {
     const file = event.target.files[0];
     if (file && file.type.startsWith('image/')) {
       setSelectedImage(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+      setPreviewUrl(URL.createObjectURL(file));
+      setShowSourceSelect(false);
     }
   };
 
-  // モバイル対応のPDF生成&ダウンロード処理
   const convertToPdf = async () => {
     if (!selectedImage) return;
     setLoading(true);
@@ -25,10 +25,8 @@ const ImageToPdfConverter = () => {
     try {
       const pdf = new jsPDF();
       
-      // Base64形式で画像を読み込む
-      const reader = new FileReader();
-      
       const imageData = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
         reader.onerror = reject;
         reader.readAsDataURL(selectedImage);
@@ -40,72 +38,102 @@ const ImageToPdfConverter = () => {
         image.src = imageData;
       });
 
-      // PDF用のサイズ計算
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       
       let imgWidth = img.width;
       let imgHeight = img.height;
       
-      if (imgWidth > pageWidth || imgHeight > pageHeight) {
-        const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
-        imgWidth *= ratio;
-        imgHeight *= ratio;
-      }
+      const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
+      imgWidth *= ratio;
+      imgHeight *= ratio;
       
       const x = (pageWidth - imgWidth) / 2;
       const y = (pageHeight - imgHeight) / 2;
       
-      // PDFに画像を追加
       pdf.addImage(img, 'JPEG', x, y, imgWidth, imgHeight);
 
-      // モバイル対応のダウンロード処理
       const pdfOutput = pdf.output('blob');
       const pdfUrl = URL.createObjectURL(pdfOutput);
       
-      // ダウンロードリンクを作成
-      const downloadLink = document.createElement('a');
-      downloadLink.href = pdfUrl;
-      downloadLink.download = 'converted-image.pdf';
-      
-      // iOS Safariの場合は新しいタブでPDFを開く
-      if (navigator.userAgent.match(/(iPhone|iPad)/i)) {
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
         window.open(pdfUrl, '_blank');
       } else {
-        // その他のデバイスはダウンロードを試みる
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.download = 'converted-image.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       }
       
-      // 生成したURLを解放
       URL.revokeObjectURL(pdfUrl);
-      
     } catch (error) {
-      console.error('PDF生成エラー:', error);
-      alert('PDFの生成中にエラーが発生しました。');
+      console.error('PDF conversion error:', error);
+      alert('PDF conversion failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+  };
+
   return (
     <div className="converter-container">
-      <div className="upload-area">
-        <label className="upload-content">
-          <Upload className="upload-icon" />
-          <p className="upload-text">
-            {isMobile() ? '写真を選択または撮影' : '画像をクリックまたはドラッグ＆ドロップ'}
-          </p>
-          <input
-            type="file"
-            className="file-input"
-            accept="image/*"
-            capture="environment"
-            onChange={handleImageSelect}
-          />
-        </label>
-      </div>
+      {!showSourceSelect ? (
+        <div 
+          className="upload-area"
+          onClick={() => isMobile() && setShowSourceSelect(true)}
+        >
+          <label className="upload-content">
+            <Upload className="upload-icon" />
+            <p className="upload-text">
+              {isMobile() ? 'タップして写真を選択' : '画像をクリックまたはドラッグ＆ドロップ'}
+            </p>
+            {!isMobile() && (
+              <input
+                type="file"
+                className="file-input"
+                accept="image/*"
+                onChange={handleImageSelect}
+              />
+            )}
+          </label>
+        </div>
+      ) : (
+        <div className="source-select">
+          <label className="source-option">
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="file-input"
+              onChange={handleImageSelect}
+            />
+            <div className="source-button">
+              <Camera className="source-icon" />
+              <span>カメラで撮影</span>
+            </div>
+          </label>
+          
+          <label className="source-option">
+            <input
+              type="file"
+              accept="image/*"
+              className="file-input"
+              onChange={handleImageSelect}
+            />
+            <div className="source-button">
+              <Image className="source-icon" />
+              <span>アルバムから選択</span>
+            </div>
+          </label>
+        </div>
+      )}
 
       {previewUrl && (
         <div className="preview-container">
@@ -132,13 +160,6 @@ const ImageToPdfConverter = () => {
         )}
       </button>
     </div>
-  );
-};
-
-// モバイル判定用のユーティリティ関数
-const isMobile = () => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
   );
 };
 

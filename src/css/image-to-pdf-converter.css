@@ -93,6 +93,34 @@
   height: 16px;
 }
 
+.source-select {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.source-option {
+  flex: 1;
+}
+
+.source-button {
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.source-icon {
+  width: 2rem;
+  height: 2rem;
+  color: #6b7280;
+}
+
 /* スマートフォン向けのスタイル調整 */
 @media (max-width: 480px) {
   .converter-container {
