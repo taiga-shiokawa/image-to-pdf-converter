@@ -56,8 +56,15 @@ const ImageToPdfConverter = () => {
       const pdfOutput = pdf.output('blob');
       const pdfUrl = URL.createObjectURL(pdfOutput);
       
+      // iOS Safari用の処理
       if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        window.open(pdfUrl, '_blank');
+        const pdfDataUrl = pdf.output('dataurlstring');
+        const newWindow = window.open();
+        if (newWindow) {
+          newWindow.document.write(
+            `<iframe src="${pdfDataUrl}" style="width:100%; height:100%;" frameborder="0"></iframe>`
+          );
+        }
       } else {
         const link = document.createElement('a');
         link.href = pdfUrl;
