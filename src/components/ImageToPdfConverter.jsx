@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { jsPDF } from 'jspdf';
-import { Upload, FileText, Camera, Image } from 'lucide-react';
+import { Upload, FileText, Camera, ImageIcon } from 'lucide-react';
 import "../css/image-to-pdf-converter.css";
 
 const ImageToPdfConverter = () => {
@@ -128,7 +128,7 @@ const ImageToPdfConverter = () => {
               onChange={handleImageSelect}
             />
             <div className="source-button">
-              <Image className="source-icon" />
+              <ImageIcon className="source-icon" />
               <span>アルバムから選択</span>
             </div>
           </label>
